@@ -6,6 +6,16 @@ final class FloatingPanelController {
     private var panel: NSPanel?
 
     func show(result: TranslationResult) {
+        let content = FloatingPanelContent.translation(result)
+        showPanel(content: content, copyText: result.translatedText)
+    }
+
+    func showMessage(title: String, body: String) {
+        let content = FloatingPanelContent.message(title: title, body: body)
+        showPanel(content: content, copyText: nil)
+    }
+
+    private func showPanel(content: FloatingPanelContent, copyText: String?) {
         if panel == nil {
             panel = makePanel()
         }
@@ -13,8 +23,8 @@ final class FloatingPanelController {
         guard let panel else { return }
 
         let rootView = FloatingResultPanelView(
-            result: result,
-            onCopy: { ClipboardWriter.write(text: result.translatedText) },
+            content: content,
+            onCopy: copyText.map { text in { ClipboardWriter.write(text: text) } },
             onClose: { [weak panel] in panel?.orderOut(nil) }
         )
 

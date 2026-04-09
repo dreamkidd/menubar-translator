@@ -13,6 +13,7 @@ final class AppModel: ObservableObject {
     let clipboardTextSource: ClipboardTextSource
     let modelManager: ModelManager
     private let triggerCoordinator: TranslationTriggerCoordinator
+    private let hotkeyManager: HotkeyManager
     private let floatingPanelController = FloatingPanelController()
 
     init(
@@ -20,6 +21,8 @@ final class AppModel: ObservableObject {
         clipboardTextSource: ClipboardTextSource = ClipboardTextSource(),
         modelManager: ModelManager = ModelManager()
     ) {
+        let hotkeyManager = HotkeyManager()
+
         self.translationEngine = translationEngine
         self.clipboardTextSource = clipboardTextSource
         self.modelManager = modelManager
@@ -27,6 +30,14 @@ final class AppModel: ObservableObject {
             clipboardTextSource: clipboardTextSource,
             translationEngine: translationEngine
         )
+        self.hotkeyManager = hotkeyManager
+
+        hotkeyManager.onTrigger = { [weak self] in
+            Task { @MainActor in
+                self?.handleGlobalShortcutTrigger()
+            }
+        }
+        hotkeyManager.registerDefaultHotkey()
     }
 
     func translateManualInput() {
@@ -46,6 +57,19 @@ final class AppModel: ObservableObject {
     }
 
     func translateClipboard() {
+        handleClipboardTranslation(showFloatingPanelOnSuccess: true, showFloatingPanelOnFailure: false)
+    }
+
+    func copyLatestTranslation() {
+        guard let translatedText = latestResult?.translatedText else { return }
+        ClipboardWriter.write(text: translatedText)
+    }
+
+    private func handleGlobalShortcutTrigger() {
+        handleClipboardTranslation(showFloatingPanelOnSuccess: true, showFloatingPanelOnFailure: true)
+    }
+
+    private func handleClipboardTranslation(showFloatingPanelOnSuccess: Bool, showFloatingPanelOnFailure: Bool) {
         isTranslating = true
         lastErrorMessage = nil
 
@@ -55,16 +79,22 @@ final class AppModel: ObservableObject {
             do {
                 let result = try await triggerCoordinator.translateFromClipboard(direction: currentDirection)
                 latestResult = result
-                floatingPanelController.show(result: result)
+
+                if showFloatingPanelOnSuccess {
+                    floatingPanelController.show(result: result)
+                }
             } catch {
-                lastErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                lastErrorMessage = message
+
+                if showFloatingPanelOnFailure {
+                    floatingPanelController.showMessage(
+                        title: "Translation Unavailable",
+                        body: "No usable text was found. Copy some text first or use the menu bar input.\n\nDetails: \(message)"
+                    )
+                }
             }
         }
-    }
-
-    func copyLatestTranslation() {
-        guard let translatedText = latestResult?.translatedText else { return }
-        ClipboardWriter.write(text: translatedText)
     }
 
     private func runTranslation(request: TranslationRequest, presentInFloatingPanel: Bool) {
