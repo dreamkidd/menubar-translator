@@ -42,6 +42,25 @@ It is meant to feel like a lightweight macOS capability:
 - automatic clipboard translation
 - complex history system
 
+## Bootstrap
+
+This repository currently uses a lightweight native macOS skeleton plus an `XcodeGen` spec.
+
+### Generate the Xcode project on macOS
+
+```bash
+brew install xcodegen
+xcodegen generate
+open MenubarTranslator.xcodeproj
+```
+
+### Current status
+
+- native macOS skeleton initialized
+- menu bar / floating panel / translation abstractions scaffolded
+- week-1 MVP issues created in GitHub
+- local inference is still a follow-up spike, not wired yet
+
 ## Docs
 
 - [Product](docs/product.md)

@@ -1,0 +1,19 @@
+# macOS / Xcode
+.DS_Store
+DerivedData/
+.build/
+.swiftpm/
+Packages/
+xcuserdata/
+*.xcuserstate
+*.xcworkspace
+
+# XcodeGen output
+*.xcodeproj/project.xcworkspace/
+*.xcodeproj/xcuserdata/
+
+# Local model artifacts
+models/
+*.litertlm
+*.gguf
+*.bin
